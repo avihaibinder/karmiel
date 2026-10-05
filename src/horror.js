@@ -126,14 +126,15 @@ hsign(-11.5, 4.6, 38, 3, 0.7, ['יציאה'], '#1b7a3a', Math.PI / 2, '#fff');
 
 // ---------------------------------------------------------------- lights
 const flashlight = new THREE.SpotLight(0xfff1d0, 60, 45, 0.42, 0.45, 1.3); flashlight.castShadow = false;
-camera.add(flashlight); flashlight.position.set(0.4, -0.3, 0); flashlight.target.position.set(0, 0, -1); camera.add(flashlight.target);
+camera.add(flashlight); flashlight.position.set(0, 0, 0); flashlight.target.position.set(0, 0, -40); camera.add(flashlight.target);   // beam dead-centre on the view axis (an offset origin with a 1 m target aimed it 2 m off to the side)
 if (!camera.parent) scene.add(camera);
 flashlight.visible = false;
 const tubes = [[0, 5.6, 0], [0, 5.6, -44], [-36, 5.6, 0], [36, -0.6, 11], [36, -0.6, 38], [-4, 5.6, 38]].map(([x, y, z]) => { const l = new THREE.PointLight(0xcfe8ff, 0, 26, 1.6); l.position.set(IX + x, y, IZ + z); root.add(l); const tube = mesh(boxG(2.4, 0.12, 0.3), mat(0xeef6ff, { emissive: 0xcfe8ff, emissiveIntensity: 0 }), IX + x, y + 0.4, IZ + z, root); return { l, tube, base: 0 }; });
 const disco = [0xff4d8d, 0x4fc3f7, 0xffd166].map((c, i) => { const l = new THREE.PointLight(c, 0, 30, 1.4); l.position.set(IX + 30 + i * 8, -1.5, IZ + 10 + i * 12); root.add(l); return l; });
 
 // ---------------------------------------------------------------- mannequins ("ועד הסוחרים הנצחי") and כיכרון
-const WHISPERS = ['גם אתה עוזב?', 'כולם עוזבים...', 'היה פה באולינג... היה פה הכול...', 'יש לנו כריות כתפיים. מה יש להם בתל אביב?', 'תישאר... נמדוד אותך...', 'יש מידה שלך... במחסן... משנת 92...', 'לא הסתכלת... אז זזנו... סליחה...', 'אנחנו לא מפחידות. אנחנו בודדות. זה שונה.'];
+const WHISPERS = ['גם אתה עוזב?', 'כולם עוזבים...', 'היה פה באולינג... היה פה הכול...', 'יש לנו כריות כתפיים. מה יש להם בתל אביב?', 'תישאר... נמדוד אותך...', 'יש מידה שלך... במחסן... משנת 92...', 'לא הסתכלת... אז זזנו... סליחה...', 'אנחנו לא מפחידות. אנחנו בודדות. זה שונה.',
+  'אכלת?... סליחה. הרגל. סבתא שלך קנתה פה חזייה ב-93...', 'יש לך פנים של מידה L. אל תתווכח עם בובה.', 'בתל אביב הבובות עירומות. בלי כבוד. בלי כריות כתפיים.', 'תעמוד רגע ישר... ככה... עכשיו אל תזוז 30 שנה. זה נעים.', 'המבצע נגמר ב-96. אנחנו לא. אנחנו אף פעם לא.', 'ראש העיר רצה לחנוך אותנו ככיכר... כמעט הסכמנו...', 'יש לנו קבוצת פייסבוק. 17 חברות. כולן אנחנו.', 'ששש... מיצי ישנה... היא גנבה לנו את העיניים... רק את הטובות...'];
 const MAN = [];
 function mannequin(x, z, group) {
   const h = makeHuman({ skin: 0xe8e0d0, shirt: pick([0xff4d8d, 0x4fc3f7, 0xb388ff, 0x7ee787, 0xffd166]), pants: pick([0x1d3557, 0x222222, 0xffffff]), hair: null, shoes: 0xe8e0d0 });
@@ -158,7 +159,7 @@ const kikaron = new THREE.Group();
   const sash = mesh(boxG(3.3, 0.35, 0.05), 0xe63946, 0, 2.5, 1.66, kikaron); sash.rotation.z = -0.4;
   kikaron.position.set(IX + 62, -6, IZ + 11); kikaron.rotation.y = -Math.PI / 2; kikaron.visible = false; root.add(kikaron);
 }
-const KIKARON_LINES = ['ברוכים הבאים!!!', 'יש חניה חינם!!!', 'באולינג! קולנוע! שני בנקים!!!', 'למה ללכת? הכול פה!!!', 'אל תצא מהכיכר!!! אי אפשר לצאת מכיכר!!!', 'מבצע לזוגות צעירים!!! 1992!!!', 'תסתובב!!! סיבוב נוסף!!! תמיד סיבוב נוסף!!!'];
+const KIKARON_LINES = ['ברוכים הבאים!!!', 'יש חניה חינם!!!', 'באולינג! קולנוע! שני בנקים!!!', 'למה ללכת? הכול פה!!!', 'אל תצא מהכיכר!!! אי אפשר לצאת מכיכר!!!', 'מבצע לזוגות צעירים!!! 1992!!!', 'תסתובב!!! סיבוב נוסף!!! תמיד סיבוב נוסף!!!', 'חיבוק!!! חיבוק חינם!!! לא משחררים!!!', 'מועדון לקוחות!!! 40 נקודות!!! תממש!!! תממש ב-1996!!!', 'תל אביב?!?! אין שם כיכרון!!! יש שם רק יובל המבולבל!!!', 'אני עובד החודש!!! 400 חודשים ברצף!!!', 'יוסי!!! סבתא שלך בקומה 2!!! אין קומה 2!!! תעלה!!!'];
 // pigeons + carts
 const pigeons = []; for (let i = 0; i < 40; i++) { const p = makePigeon(); p.visible = false; root.add(p); pigeons.push({ g: p, v: new THREE.Vector3() }); }
 const carts = [];
@@ -166,24 +167,27 @@ function cartMesh() { const g = new THREE.Group(); mesh(boxG(0.9, 0.7, 1.3), 0xb
 for (let i = 0; i < 13; i++) { const g = cartMesh(); g.visible = false; carts.push({ g, v: new THREE.Vector3(), on: false }); }
 
 // ---------------------------------------------------------------- runtime state
-const H = { active: false, phase: 'explore', cp: null, flags: {}, resolve: null, crumbs: [], kT: 0, kLine: 0, fashionMoved: false, pinsDown: 0, lightsOn: false, flash: true };
+const H = { active: false, phase: 'explore', cp: null, flags: {}, resolve: null, crumbs: [], kT: 0, kLine: 0, fashionMoved: false, pinsDown: 0, lightsOn: false, flash: true, safeT: 0 };
 export const horror = H;
 const CPS = { 1: [0, 14, Math.PI], 2: [-37, -17, Math.PI], 3: [22, -44, -Math.PI / 2], 4: [56, 16, -Math.PI / 2], 5: [30, 30, -Math.PI / 2] };
-const FAILS = ['מדדו אותך. אתה מידה M. בתל אביב היית S, כי שם אוכלים רק עלה.', 'הבובות הושיבו אותך ליד השולחן של המשפחה של אבי. דודה אחת שאלה מתי אתה מתחתן.', 'הבובות תפסו אותך. הן מדדו אותך. אתה מידה M. תתחיל מהצ\'קפוינט.', 'כיכרון חיבק אותך. חזק. לנצח. טוב, לא לנצח – עד הצ\'קפוינט.', 'הסתכלת על הטלפון. הבובות לא סולחות על טלפונים.', 'היונים החליטו שאתה פסל. נסה שוב.', 'נתקעת בחתונה של שרית ואבי. רקדת את כל הערב. עכשיו 1995. חוזרים לצ\'קפוינט.', 'הרמקול אמר את השם שלך. עצרת להקשיב. זו הייתה טעות.', 'כיכרון הכריח אותך להיכנס למועדון הלקוחות. חוזרים.'];
+const FAILS = ['מדדו אותך. אתה מידה M. בתל אביב היית S, כי שם אוכלים רק עלה.', 'הבובות הושיבו אותך ליד השולחן של המשפחה של אבי. דודה אחת שאלה מתי אתה מתחתן.', 'הבובות תפסו אותך. הן מדדו אותך. אתה מידה M. תתחיל מהצ\'קפוינט.', 'כיכרון חיבק אותך. חזק. לנצח. טוב, לא לנצח – עד הצ\'קפוינט.', 'הסתכלת על הטלפון. הבובות לא סולחות על טלפונים.', 'היונים החליטו שאתה פסל. נסה שוב.', 'נתקעת בחתונה של שרית ואבי. רקדת את כל הערב. עכשיו 1995. חוזרים לצ\'קפוינט.', 'הרמקול אמר את השם שלך. עצרת להקשיב. זו הייתה טעות.', 'כיכרון הכריח אותך להיכנס למועדון הלקוחות. חוזרים.',
+  'בובה אחת הלבישה אותך ז\'קט עם כריות כתפיים. עכשיו אתה לא עובר בדלתות. חוזרים.', 'ניסית להסביר לבובה שאתה עוזב. היא הנהנה. היא לא מבינה. היא בובה. היא הנהנה 400 פעם.', 'הבובות צילמו אותך לקטלוג של 1993. יצאת טוב. לא מצאת אותך. חוזרים.', 'שרית ואבי ביקשו שתהיה עד בחתונה. חתמת. עכשיו אתה בוועד הבית של הקניון. לנצח.', 'סבתא שלך הייתה שם. היא שאלה אם אכלת. ענית "לא". זה היה שקר. הבובות יודעות.'];
 function setCP(n) { if (H.cp === n) return; H.cp = n; toast(`💾 נקודת שמירה ${n}/5`, '', 2500); }
+// a few seconds after every respawn nothing may touch you — checkpoint 5 is inside the events hall and used to be a death loop
+const GRACE = 3;
 function resetEnemies() {
   for (const m of MAN) { m.h.g.position.set(m.x0, interiorGround(m.x0, m.z0), m.z0); poseHuman(m.h, 'mannequin'); if (m.whisper) { m.h.g.remove(m.whisper); m.whisper = null; } }
   for (const c of carts) { c.on = false; c.g.visible = false; }
   H.crumbs = []; H.kT = 3;
   if (H.phase === 'escape') { const [x, z] = CPS[H.cp]; kikaron.position.set(IX + x + 12, interiorGround(IX + x + 12, IZ + z), IZ + z); }
 }
-const DEATH_LINES = { 3: 'הבובות כבר יודעות את המידה שלך בעל פה. אחת מהן סרגה לך סוודר. חוזרים לצ\'קפוינט.', 5: 'פעם חמישית. הבובות פתחו לך כרטיס מועדון לקוחות. יש לך 40 נקודות. אפשר לממש ב-1996.', 8: 'בובה אחת לחשה: "תישאר, נו". בובה אחרת: "הוא לא יישאר. הם אף פעם לא נשארים." אתם בזוגיות עכשיו.' };
+const DEATH_LINES = { 3: 'הבובות כבר יודעות את המידה שלך בעל פה. אחת מהן סרגה לך סוודר. חוזרים לצ\'קפוינט.', 5: 'פעם חמישית. הבובות פתחו לך כרטיס מועדון לקוחות. יש לך 40 נקודות. אפשר לממש ב-1996.', 8: 'בובה אחת לחשה: "תישאר, נו". בובה אחרת: "הוא לא יישאר. הם אף פעם לא נשארים." אתם בזוגיות עכשיו.', 12: 'פעם 12. הבובות הפסיקו לרדוף. הן פשוט מחכות ליד הצ\'קפוינט עם כיסא. ועוגה. ושאלות על החיים שלך.', 20: 'פעם 20. ראש העיר נכנס לקניון וחנך את הצ\'קפוינט ככיכר. יש בו עציץ. אתה עדיין פה.' };
 async function fail(msg) {
   if (H.failing) return; H.failing = true; P.frozen = true; sfx('sting');
   H.deaths = (H.deaths || 0) + 1; if (!msg) msg = DEATH_LINES[H.deaths];
   await card(`<div class="fail">😱</div>${msg || pick(FAILS)}`); hideCard();
-  const [x, z, yaw] = CPS[H.cp]; teleport(IX + x, IZ + z, yaw); resetEnemies();
-  if (H.phase === 'escape') startTimer(120, 'לצאת מהקניון', () => fail('נגמר הזמן. הקניון נסגר איתך בפנים. מוטי ישמור לך מנה. חוזרים לצ\'קפוינט.'));
+  const [x, z, yaw] = CPS[H.cp]; teleport(IX + x, IZ + z, yaw); resetEnemies(); H.safeT = GRACE;
+  if (H.phase === 'escape') { startTimer(120, 'לצאת מהקניון', () => fail('נגמר הזמן. הקניון נסגר איתך בפנים. מוטי ישמור לך מנה. חוזרים לצ\'קפוינט.')); toast('🏃 3 שניות של חסד. הבובות סופרות. רוץ (Shift).', 'good', 3000); }
   P.frozen = false; H.failing = false;
 }
 function burstPigeons() { sfx('flap'); pigeons.forEach(p => { p.g.visible = true; p.g.position.set(IX + 50 + Math.random(), 3 + Math.random() * 2, IZ - 35 + (Math.random() - 0.5) * 10); p.v.set(-6 - Math.random() * 10, (Math.random() - 0.3) * 4, (Math.random() - 0.5) * 14); }); }
@@ -209,7 +213,7 @@ export function enterMall() {
 }
 function exitMall() {
   H.active = false; root.visible = false; setInterior(false); flashlight.visible = false; stopTimer();
-  P.interior = false; P.ground = groundAt; P.pushX = 0; music('roam'); const r = H.resolve; H.resolve = null; r && r();
+  P.interior = false; P.ground = groundAt; P.pushX = 0; cam.dist = 10; cam.pitch = 0.36; music('roam'); const r = H.resolve; H.resolve = null; r && r();
 }
 const once = (k, f) => { if (!H.flags[k]) { H.flags[k] = true; f(); } };
 const _v = new THREE.Vector3(), _f = new THREE.Vector3();
@@ -223,7 +227,7 @@ function seen(obj) {
 export function updateHorror(dt, t) {
   if (!H.active) return;
   if (pressed.has('KeyF')) { H.flash = !H.flash; flashlight.visible = H.flash; sfx('blip'); }
-  const room = roomAt(P.pos.x, P.pos.z), lx = P.pos.x - IX, lz = P.pos.z - IZ;
+  const room = roomAt(P.pos.x, P.pos.z), lx = P.pos.x - IX, lz = P.pos.z - IZ, safe = (H.safeT -= dt) > 0;
   // flickering tubes
   tubes.forEach((tb, i) => { const on = H.lightsOn ? 1 : (Math.random() < (i === 1 ? 0.08 : 0.02) ? 1 : 0); tb.l.intensity = on * (H.lightsOn ? 10 : 6); tb.tube.material.emissiveIntensity = on * 2; });
   decoEsc.material.map.offset.y -= dt * 0.5; stepTex.offset.y += dt * (H.phase === 'escape' ? 1.2 : 0);
@@ -250,7 +254,7 @@ export function updateHorror(dt, t) {
   if (room === 'V' && H.phase === 'escape') { setCP(5); once('wed', () => { toast('💃 אולם האירועים: חתונה מ-1994. הדי-ג\'יי עדיין מחכה לסלואו. אל תעצור לרקוד.'); H.slowT = 4; toast('🎶 די-ג\'יי צביקה שם סלואו. הבובות מתחלקות לזוגות. יש לך 4 שניות. אף אחד לא הזמין אותך.', 'good', 5000); }); }
   if (H.slowT > 0) H.slowT -= dt;
   if (room === 'E2') {
-    if (H.phase === 'escape') { P.pushX = 5.5; once('esc', () => { toast('↘️ המדרגות הנעות נוסעות בכיוון ההפוך. כמו החיים שלך. רוץ.', 'bad'); pa('תודה שקניתם בקניון הישן! אל תשכחו לחזור! אל תשכחו! לחזור! לחזור!', false); }); }
+    if (H.phase === 'escape') { P.pushX = 3.5; once('esc', () => { toast('↘️ המדרגות הנעות נוסעות בכיוון ההפוך. כמו החיים שלך. תחזיק Shift ותרוץ.', 'bad', 6000); pa('תודה שקניתם בקניון הישן! אל תשכחו לחזור! אל תשכחו! לחזור! לחזור!', false); }); }
   } else P.pushX = 0;
   if (room === 'L' && H.phase === 'escape') { once('pa9', () => { pa('ה-ק-נ-י-ו-ן... נ-ס-ג-ר... ת-ו-ד-ה... ש-ב-א-ת-ם... ש-ו-ב...'); toast('🚪 האור של היציאה! או שזה עוד שלט של בנק. לא, זו היציאה!'); }); if (lx < -10) { P.pushX = 0; exitMall(); return; } }
   // nest interaction
@@ -259,7 +263,7 @@ export function updateHorror(dt, t) {
   // carts
   for (const c of carts) {
     if (!c.on) continue; c.g.position.addScaledVector(c.v, dt); c.g.position.y = interiorGround(c.g.position.x, c.g.position.z);
-    if (Math.hypot(c.g.position.x - P.pos.x, c.g.position.z - P.pos.z) < 1.1) { if (c.v.length() > 5) { fail('עגלת קניות דרסה אותך. במהירות של 4 קמ"ש. זה לא כואב. זה משפיל.'); return; } c.v.multiplyScalar(0); }
+    if (Math.hypot(c.g.position.x - P.pos.x, c.g.position.z - P.pos.z) < 1.1) { if (c.v.length() > 5 && !safe) { fail('עגלת קניות דרסה אותך. במהירות של 4 קמ"ש. זה לא כואב. זה משפיל.'); return; } c.v.multiplyScalar(0); }
     if (c.g.position.z > IZ + 19) c.on = false;
   }
   // pigeons
@@ -267,7 +271,7 @@ export function updateHorror(dt, t) {
   // mannequins — they move only when unobserved
   const activeGroups = H.phase === 'explore' ? { F: 1, K: 1 } : { V: 1, B: 1, K: 0 };
   for (const m of MAN) {
-    if (!activeGroups[m.group]) continue;
+    if (!activeGroups[m.group] || safe) continue;
     if (H.slowT > 0 && m.group === 'V') { m.h.armL.rotation.z = -1.2; m.h.armR.rotation.z = 1.2; m.h.g.rotation.y += dt * 2; continue; }
     const g = m.h.g, d = Math.hypot(g.position.x - P.pos.x, g.position.z - P.pos.z);
     if (d > 36 || Math.abs(g.position.y - P.pos.y) > 3) continue;
@@ -282,13 +286,13 @@ export function updateHorror(dt, t) {
   // escape: כיכרון follows your breadcrumbs, pins fall
   if (H.phase === 'escape') {
     if ((H.crumbT = (H.crumbT || 0) - dt) <= 0) { H.crumbT = 0.25; H.crumbs.push([P.pos.x, P.pos.z]); }
-    if ((H.kT -= dt) <= 0 && H.crumbs.length) {
+    if (!safe && (H.kT -= dt) <= 0 && H.crumbs.length) {
       const [tx, tz] = H.crumbs[0], dx = tx - kikaron.position.x, dz = tz - kikaron.position.z, d = Math.hypot(dx, dz), sp = 10.5 * dt;
       if (d < sp) H.crumbs.shift(); else { kikaron.position.x += dx / d * sp; kikaron.position.z += dz / d * sp; kikaron.rotation.y = Math.atan2(dx, dz); }
       kikaron.position.y = interiorGround(kikaron.position.x, kikaron.position.z) + Math.abs(Math.sin(t * 9)) * 0.3;
     }
     if ((H.kLineT = (H.kLineT || 0) - dt) <= 0) { H.kLineT = 4; if (H.kLabel) kikaron.remove(H.kLabel); H.kLabel = label(KIKARON_LINES[H.kLine++ % KIKARON_LINES.length], { bg: '#e63946', px: 40, k: 0.016 }); H.kLabel.position.y = 5.6; kikaron.add(H.kLabel); }
-    if (Math.hypot(kikaron.position.x - P.pos.x, kikaron.position.z - P.pos.z) < 1.8) { fail('כיכרון חיבק אותך. חזק. לנצח. טוב, לא לנצח – עד הצ\'קפוינט.'); return; }
+    if (!safe && Math.hypot(kikaron.position.x - P.pos.x, kikaron.position.z - P.pos.z) < 1.8) { fail('כיכרון חיבק אותך. חזק. לנצח. טוב, לא לנצח – עד הצ\'קפוינט.'); return; }
     for (const p of pins) if (!p.down && Math.hypot(p.m.position.x - P.pos.x, p.m.position.z - P.pos.z) < 0.9) { p.down = true; p.m.rotation.z = 1.5; p.m.position.y = -5.8; sfx('pin'); if (++H.pinsDown === 10) achieve('bowl', 'באולינג בחושך', 'הפלת 10 פינים תוך כדי בריחה מכיכרון. סטרייק!'); }
   }
 }
@@ -306,7 +310,7 @@ export async function takeStamp() {
   H.lightsOn = true; H.phase = 'escape'; hemi.intensity = 0.45; sfx('sting'); music('mall92'); pa('הקניון נפתח מחדש! כל הסחורה ב-50% הנחה! אף אחד לא יוצא!', false);
   setObjective('הקניון הישן: הקומה הנשכחת', [[true, 'למצוא את הקן של מיצי'], [true, 'לקחת את החותמת'], [false, 'לצאת. חי. (היציאה – במעלה המדרגות הנעות)']]);
   await new Promise(r => setTimeout(r, 1500));
-  curtain.visible = false; kikaron.visible = true; H.cp = null; setCP(4); resetEnemies();
+  curtain.visible = false; kikaron.visible = true; H.cp = null; setCP(4); resetEnemies(); H.safeT = GRACE;
   kikaron.position.set(IX + 62, -6, IZ + 11);
   toast('⏱️ 2:00 לצאת. הבובות כבר לא מתביישות.', 'bad', 6000); music('chase');
   startTimer(120, 'לצאת מהקניון', () => fail('נגמר הזמן. הקניון נסגר איתך בפנים. מוטי ישמור לך מנה. חוזרים לצ\'קפוינט.'));

@@ -51,6 +51,8 @@ export const AREAS = D.a.map(a => { const pts = []; for (let i = 1; i < a.length
 function polyPath(ctx, pts) { ctx.beginPath(); pts.forEach(([x, z], i) => i ? ctx.lineTo(gx(x), gz(z)) : ctx.moveTo(gx(x), gz(z))); ctx.closePath(); }
 for (const cls of AREA_ORDER) for (const a of AREAS) if (a.cls === cls) { gctx.fillStyle = AREA_COL[cls]; polyPath(gctx, a.pts); gctx.fill(); if (cls === 'pitch') { gctx.strokeStyle = 'rgba(255,255,255,.6)'; gctx.lineWidth = 1; gctx.stroke(); } }
 
+// +1 when the polygon winds so that (ez, -ex) is the outward edge normal, else -1
+export function polySign(pts) { let a = 0; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) a += pts[j][0] * pts[i][1] - pts[i][0] * pts[j][1]; return a > 0 ? 1 : -1; }
 export function pointInPoly(x, z, pts) {
   let inside = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
@@ -122,10 +124,15 @@ export function groundAt(x, z) {
 // =====================================================================
 export const ROAD_W = [15, 11, 10, 8.5, 7, 4.6, 6];
 export const LOCAL_NAMES = { 'כיכר השלום': 'כיכר האבן' };   // what Karmiel residents actually call things
+// the stretch of בירנית through the midrachov (next to HaSchnitzelia) is a pedestrian mall — no cars, stone paving
+const _mx = Math.cos(32.914 * Math.PI / 180) * 111320 * S, _mz = 110900 * S;
+const MIDR = { x0: (35.2922 - 35.2985) * _mx, x1: (35.2934 - 35.2985) * _mx, z0: -(32.9106 - 32.914) * _mz, z1: -(32.9083 - 32.914) * _mz };
+const inMidr = pts => pts.every(([x, z]) => x > MIDR.x0 && x < MIDR.x1 && z > MIDR.z0 && z < MIDR.z1);
 export const ROADS = D.r.map(([cls, oneway, rb, name, js, flat]) => {
   name = LOCAL_NAMES[name] || name;
   const pts = []; for (let i = 0; i < flat.length; i += 2) pts.push([flat[i], flat[i + 1]]);
   const junc = new Map(); for (let i = 0; i < js.length; i += 2) junc.set(js[i], js[i + 1]);
+  if (name === 'בירנית' && inMidr(pts)) { cls = 6; oneway = 0; name = 'המדרחוב'; }
   return { cls, oneway, rb, name, pts, junc, w: ROAD_W[cls] * (oneway && cls <= 1 && !rb ? 0.75 : 1) };
 });
 function roadTex(kind) {
@@ -200,7 +207,7 @@ function wallTex(kind) {
     if (kind === 'apt') {
       x.fillStyle = '#56616b'; x.fillRect(22, 26, 84, 60); x.fillStyle = '#9fb6c6'; x.fillRect(26, 30, 76, 52);
       x.fillStyle = 'rgba(255,255,255,.35)'; x.fillRect(26, 30, 76, 9);
-      if (Math.random() < 1) { x.fillStyle = '#e6e0d2'; x.fillRect(26, 30, 76, 22); x.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 32; i < 52; i += 3) x.fillRect(26, i, 76, 1); }
+      x.fillStyle = '#e6e0d2'; x.fillRect(26, 30, 76, 22); x.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 32; i < 52; i += 3) x.fillRect(26, i, 76, 1);
       x.fillStyle = '#c9c2b2'; x.fillRect(14, 86, 100, 8); x.fillStyle = '#8f9aa3'; for (let i = 16; i < 112; i += 6) x.fillRect(i, 94, 2, 14);
     } else if (kind === 'house') {
       x.fillStyle = '#6b5a48'; x.fillRect(36, 34, 56, 56); x.fillStyle = '#a9bfcc'; x.fillRect(40, 38, 48, 48); x.fillStyle = '#7a4f2a'; x.fillRect(30, 30, 6, 64); x.fillRect(92, 30, 6, 64);
@@ -250,10 +257,11 @@ for (const bd of D.b) {
   _c.set(lm === 'cityhall' ? 0xe8e0cc : lm === 'lev' ? 0xf1e7d4 : rpick(TINT[kind]));
   const b = wb(kind), tile = TILE[kind], vTop = lv; let per = 0;
   let cx = 0, cz = 0; for (const [x, z] of pts) { cx += x; cz += z; } cx /= pts.length; cz /= pts.length;
+  // outward normal from the winding (signed area) — a centroid test fails on L/U-shaped footprints and left ~600 buildings with inside-out walls
+  const sgn = polySign(pts);
   for (let i = 0; i < pts.length; i++) {
     const [ax, az] = pts[i], [bx, bz] = pts[(i + 1) % pts.length], L = Math.hypot(bx - ax, bz - az);
-    const mx = (ax + bx) / 2, mz = (az + bz) / 2; let nx = bz - az, nz = -(bx - ax);
-    if (nx * (mx - cx) + nz * (mz - cz) < 0) { nx = -nx; nz = -nz; }   // outward
+    const nx = (bz - az) * sgn, nz = -(bx - ax) * sgn;
     const want = new THREE.Vector3(nx, 0, nz), u0 = per / tile, u1 = (per + L) / tile, vb = vTop - (top - y0) / FLOOR;
     const A = [ax, y0, az], Bp = [bx, y0, bz], C = [bx, top, bz], Dp = [ax, top, az];
     tri(b, A, Bp, C, want, _c, [[u0, vb], [u1, vb], [u1, vTop]]); tri(b, A, C, Dp, want, _c, [[u0, vb], [u1, vTop], [u0, vTop]]);
@@ -337,7 +345,6 @@ export const RAILS = D.rail.map(f => { const p = []; for (let i = 0; i < f.lengt
 for (const r of RAILS) { octx.lineWidth = 8 * GS; octx.beginPath(); r.forEach(([x, z], i) => i ? octx.lineTo(gx(x), gz(z)) : octx.moveTo(gx(x), gz(z))); octx.stroke(); }
 const occData = octx.getImageData(0, 0, GW, GH).data;
 export const free = (x, z) => { const i = Math.round(gx(x)), j = Math.round(gz(z)); return i >= 0 && j >= 0 && i < GW && j < GH && occData[(j * GW + i) * 4] > 128; };
-export function markOccupied(x, z, r) { /* runtime additions are handled by colliders */ }
 
 // asphalt under the road meshes in the ground texture (fills junction gaps)
 gctx.strokeStyle = '#55585d'; gctx.lineCap = 'round'; gctx.lineJoin = 'round';

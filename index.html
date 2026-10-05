@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>כרמיאל: הדרך החוצה</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔄</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-  :root { --gold:#ffd166; --ink:#16161e; --panel:rgba(16,18,28,.8); --wa:#0b141a; }
+  :root { --gold:#ffd166; --ink:#16161e; --panel:rgba(16,18,28,.8); --wa:#18191a; --fb:#1877f2; }
   * { box-sizing:border-box; }
   html,body { margin:0; height:100%; overflow:hidden; background:#cfe3f0; font-family:Rubik,system-ui,sans-serif; color:#fff; user-select:none; }
   canvas { display:block; }
@@ -37,16 +38,28 @@
   .ach-ico { font-size:18px; margin-left:4px; }
   @keyframes tin { from { opacity:0; transform:translateX(-30px); } }
 
-  /* WhatsApp group (left middle) */
-  #wa { position:fixed; right:16px; top:210px; width:min(330px,36vw); background:var(--wa); border-radius:12px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.4); transform:translateX(120%); transition:transform .45s cubic-bezier(.2,.9,.3,1.2); pointer-events:none; }
+  /* the Facebook group "כרמיאלים מדברים" (right side): cover, group header, white post cards */
+  #wa { position:fixed; right:16px; top:210px; width:min(340px,36vw); background:#f0f2f5; color:#050505; border-radius:10px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.4); transform:translateX(120%); transition:transform .45s cubic-bezier(.2,.9,.3,1.2); pointer-events:none; }
   #wa.show { transform:none; }
-  #wa-head { background:#1f2c34; padding:8px 12px; font-weight:700; font-size:13px; display:flex; gap:8px; align-items:center; }
-  #wa-head .av { width:28px; height:28px; border-radius:50%; background:#25d366; display:grid; place-items:center; font-size:15px; }
-  #wa-head small { display:block; font-weight:400; opacity:.6; font-size:11px; }
-  #wa-list { padding:8px; display:flex; flex-direction:column; gap:6px; }
-  .wa-msg { background:#202c33; padding:6px 10px 16px; border-radius:8px 0 8px 8px; font-size:13px; line-height:1.35; position:relative; animation:tin .3s; max-width:92%; }
-  .wa-from { display:block; font-weight:700; font-size:12px; margin-bottom:2px; }
-  .wa-time { position:absolute; left:8px; bottom:3px; font-size:10px; opacity:.55; direction:ltr; }
+  #wa-cover { height:44px; background:linear-gradient(120deg,#1877f2 0%,#5aa5ff 55%,#42b72a 140%); display:flex; align-items:flex-end; justify-content:center; font-size:20px; letter-spacing:.35em; padding-bottom:2px; }
+  #wa-head { background:#fff; padding:8px 12px 10px; display:flex; justify-content:space-between; align-items:center; gap:8px; border-bottom:1px solid #ced0d4; }
+  #wa-head b { display:block; font-size:17px; font-weight:800; line-height:1.2; }
+  #wa-head small { display:block; font-size:12px; color:#65676b; font-weight:500; margin-top:2px; }
+  #wa-head .joined { flex:none; background:#e4e6eb; color:#050505; font-weight:700; font-size:12px; padding:6px 10px; border-radius:6px; }
+  #wa-list { padding:8px; display:flex; flex-direction:column; gap:8px; }
+  .wa-msg { background:#fff; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,.2); padding:10px 12px 4px; font-size:14px; line-height:1.4; animation:tin .3s; }
+  .wa-top { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .wa-av { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:800; font-size:16px; flex:none; }
+  .wa-from { font-weight:700; font-size:14px; }
+  .wa-meta { font-size:12px; color:#65676b; }
+  .wa-dots { margin-inline-start:auto; color:#65676b; font-weight:900; letter-spacing:1px; }
+  .wa-sys { text-align:center; font-size:12px; color:#65676b; padding:4px; }
+  .wa-react { display:flex; justify-content:space-between; font-size:12px; color:#65676b; padding:8px 2px 6px; border-bottom:1px solid #ced0d4; }
+  .wa-act { display:flex; justify-content:space-around; padding:5px 0 3px; font-size:13px; font-weight:700; color:#65676b; }
+  .wa-cmt { display:flex; gap:6px; align-items:flex-start; margin:4px 0 6px; font-size:12px; }
+  .wa-cmt .wa-av { width:24px; height:24px; font-size:11px; }
+  .wa-cmt .bub { background:#f0f2f5; border-radius:14px; padding:5px 10px; }
+  .wa-cmt .bub b { display:block; font-size:12px; }
 
   /* radar (bottom left) */
   #radar-wrap { position:fixed; left:16px; bottom:16px; pointer-events:none; }
@@ -85,7 +98,7 @@
   #fade.on { opacity:1; }
   #dance { position:fixed; inset:0; z-index:12; touch-action:none; }
   #bigmap, #pause { position:fixed; inset:0; z-index:25; }
-  #pause { display:grid; place-items:center; background:rgba(8,8,14,.8); }
+  #pause { display:grid; place-items:center; background:rgba(8,8,14,.8); z-index:33; }   /* above the title screen, so "הגדרות" actually shows */
   #pause .box { padding:24px 30px; text-align:center; min-width:320px; }
   #pause h2 { color:var(--gold); margin:0 0 14px; }
   .btn { display:block; width:100%; font:inherit; font-weight:700; font-size:17px; margin:8px 0; padding:10px 18px; border-radius:12px; border:1px solid rgba(255,255,255,.2); background:#2b2f48; color:#fff; cursor:pointer; }
@@ -153,10 +166,10 @@
 <div id="pa"></div>
 <div id="area"></div>
 <div id="toasts"></div>
-<div id="wa"><div id="wa-head"><div class="av">👥</div><div>ועד שכונה ג' – רק דברים חשובים!!!<small>214 משתתפים</small></div></div><div id="wa-list"></div></div>
+<div id="wa"><div id="wa-cover">🔄🔄🔄</div><div id="wa-head"><div><b>כרמיאלים מדברים</b><small>🌐 קבוצה ציבורית · 214 חברים · 3 מנהלים</small></div><div class="joined">✓ חבר</div></div><div id="wa-list"></div></div>
 <div id="radar-wrap" class="hidden"><div id="loc"><div id="loc-street"></div><div id="loc-place"></div></div><canvas id="radar" width="260" height="260"></canvas></div>
 <div id="waze" class="hidden">🚗 <span>תל אביב<br><b id="waze-eta">שעה ו-45</b></span></div>
-<div id="help" class="panel hidden">WASD תזוזה · Shift ריצה · רווח קפיצה · E דיבור · Q קורקינט · M מפה · Esc תפריט</div>
+<div id="help" class="panel hidden">WASD תזוזה · Shift ריצה · רווח קפיצה · E דיבור · Q קורקינט · F פנס/שלט · M מפה · Esc תפריט</div>
 <div id="prompt" class="panel hidden"></div>
 <div id="dialog" class="panel"><div id="dname"></div><div id="dtext"></div><div id="dchoices"></div><div id="dhint"><kbd>E</kbd>המשך</div></div>
 <canvas id="dance" class="hidden"></canvas>
@@ -172,7 +185,7 @@
 </div></div>
 <div id="namebox" class="hidden"><div class="box panel">
   <h2>איך קוראים לך?</h2>
-  <p>סבתא צריכה לדעת למי לקרוא. וגם הוואטסאפ של השכונה.</p>
+  <p>סבתא צריכה לדעת למי לקרוא. וגם הפייסבוק של השכונה.</p>
   <div class="gender"><button class="g on" data-g="m">👦 בן</button><button class="g" data-g="f">👧 בת</button></div>
   <input id="name-input" maxlength="14" placeholder="השם שלך" autocomplete="off" spellcheck="false">
   <div id="name-err"></div>
@@ -188,12 +201,12 @@
     <button class="btn" id="t-settings">הגדרות</button>
     <button class="btn" id="t-exit">יציאה (אתה בטוח? גם אתה?)</button>
   </div>
-  <div class="disc">פרודיה באהבה. אנשים אמיתיים מופיעים כקריקטורות חביבות בלבד. המפה מבוססת על OpenStreetMap.<br>קניון כיכר העיר האמיתי מוכרז כמבנה מסוכן – לא נכנסים. תקנו פלאפל בחוץ ותדמיינו.</div>
+  <div class="disc">פרודיה באהבה. כל הדמויות, השמות והאירועים במשחק בדיוניים ואין כל קשר בינם לבין המציאות. המפה מבוססת על OpenStreetMap.<br>קניון כיכר העיר האמיתי מוכרז כמבנה מסוכן – לא נכנסים. תקנו פלאפל בחוץ ותדמיינו.</div>
 </div></div>
 
 <script>
   // loading tips (from the design doc) while the city is built
-  const TIPS = ['טיפ: בכיכר, מי שבפנים – קודם. מי שבחוץ – מחכה. מי שמהמאפייה – מסתובב לנצח.', 'טיפ: אם סבתא שואלת "אכלת?" – אין תשובה נכונה. יש רק תשובה פחות לא נכונה.', 'טיפ: הקורקינט נוסע מהר. השיחים עוצרים מהר יותר.', 'טיפ: הבובות זזות רק כשלא מסתכלים. כמו הכלים בכיור.', 'טיפ: קבוצת הוואטסאפ יודעת איפה אתה. תמיד. אל תנסה להבין איך.', 'טיפ: Waze אומר שעה ו-45. Waze תמיד אומר שעה ו-45. אל תתווכח עם Waze.', 'טיפ: כרמיאל נמצאת 20 דקות מהכל. חוץ ממה שהיא לא.', 'טיפ: בשניצליה – תמיד תבקש חריף.', 'טיפ: בכביש 85 המכוניות לא עוצרות. במשחק זה מצחיק. בחיים – לא. תחצה במעבר.', 'טיפ: אם הלכת לאיבוד – תעשה עוד סיבוב בכיכר. זה לא יעזור, אבל זה מסורתי.', 'עובדה אמיתית: פסטיבל כרמיאל למחול מתקיים מאז 1988.', 'טוען... (בכרמיאל גם הטעינה עושה סיבוב בכיכר)'];
+  const TIPS = ['טיפ: בכיכר, מי שבפנים – קודם. מי שבחוץ – מחכה. מי שמהמאפייה – מסתובב לנצח.', 'טיפ: אם סבתא שואלת "אכלת?" – אין תשובה נכונה. יש רק תשובה פחות לא נכונה.', 'טיפ: הקורקינט נוסע מהר. השיחים עוצרים מהר יותר.', 'טיפ: הבובות זזות רק כשלא מסתכלים. כמו הכלים בכיור.', 'טיפ: קבוצת הפייסבוק יודעת איפה אתה. תמיד. אל תנסה להבין איך.', 'טיפ: Waze אומר שעה ו-45. Waze תמיד אומר שעה ו-45. אל תתווכח עם Waze.', 'טיפ: כרמיאל נמצאת 20 דקות מהכל. חוץ ממה שהיא לא.', 'טיפ: בשניצליה – תמיד תבקש חריף.', 'טיפ: בכביש 85 המכוניות לא עוצרות. במשחק זה מצחיק. בחיים – לא. תחצה במעבר.', 'טיפ: אם הלכת לאיבוד – תעשה עוד סיבוב בכיכר. זה לא יעזור, אבל זה מסורתי.', 'עובדה אמיתית: פסטיבל כרמיאל למחול מתקיים מאז 1988.', 'טוען... (בכרמיאל גם הטעינה עושה סיבוב בכיכר)', 'טיפ: אם ראש העיר מחזיק מספריים – תעמוד מאחוריו. אם הוא מחזיק עציץ – תעמוד מאחורי העציץ.', 'טיפ: בקניון הישן, 3 שניות אחרי שחוזרים לנקודת שמירה – כלום לא נוגע בך. תרוץ (Shift). במדרגות הנעות – תרוץ יותר.', 'טיפ: קבוצת הפייסבוק ״כרמיאלים מדברים״ יודעת איפה אתה. תמיד. יש צ׳ק-אין אוטומטי. סבתא התקינה.', 'טיפ: אם מישהו מציע לך דירה עגולה עם נוף 360 – זו כיכר. רוני, זו כיכר.', 'טיפ: עמידה של 20 שניות על אי תנועה הופכת אותך לרכוש עירוני. יש אנשים שזה מה שהם רצו.'];
   document.getElementById('tip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
 </script>
 <script type="importmap">

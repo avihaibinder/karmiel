@@ -1,6 +1,6 @@
 // Landmarks: hand-made props placed at the real OpenStreetMap positions of Karmiel's famous spots.
 import { THREE, scene, mat, mesh, boxG, cylG, sign, canvasTex, label, merge, vcMat, FONT } from './core.js';
-import { H, POI, ROADS, RAILS, BUILDINGS, groundAt, addBoxCollider, addCircleCollider, addPlatform, groundExtra, pointInPoly, CAR_G, free, addInst } from './world.js';
+import { H, POI, ROADS, RAILS, BUILDINGS, groundAt, addBoxCollider, addCircleCollider, addPlatform, groundExtra, pointInPoly, polySign, CAR_G, free, addInst } from './world.js';
 
 export const LM = {};
 // ---------------------------------------------------------------- geometry helpers
@@ -19,21 +19,21 @@ export function nearestRoad(x, z, filter = r => r.cls <= 4) {
   return best;
 }
 // point on a building's wall nearest to (x, z), with the outward normal
-function wallPoint(b, x, z) {
-  const n = nearestOnLine([...b.pts, b.pts[0]], x, z);
-  let nx = n.tz, nz = -n.tx; if (nx * (n.x - b.cx) + nz * (n.z - b.cz) < 0) { nx = -nx; nz = -nz; }
+export function wallPoint(b, x, z) {
+  const n = nearestOnLine([...b.pts, b.pts[0]], x, z), s = polySign(b.pts);
+  const nx = n.tz * s, nz = -n.tx * s;   // outward, also on concave footprints
   return { x: n.x, z: n.z, nx, nz, rot: Math.atan2(nx, nz) };
 }
-const nearestBuilding = (x, z, filter = () => true) => BUILDINGS.filter(filter).reduce((a, b) => { const d = Math.hypot(b.cx - x, b.cz - z); return !a || d < a.d ? { b, d } : a; }, null).b;
+export const nearestBuilding = (x, z, filter = () => true) => BUILDINGS.filter(filter).reduce((a, b) => { const d = Math.hypot(b.cx - x, b.cz - z); return !a || d < a.d ? { b, d } : a; }, null).b;
 const off = (p, d, side = 0) => ({ x: p.x + p.nx * d - p.nz * side, z: p.z + p.nz * d + p.nx * side });
-function storefront(bld, x, z, lines, bg, fg = '#fff', w = 8) {
+export function storefront(bld, x, z, lines, bg, fg = '#fff', w = 8) {
   const wp = wallPoint(bld, x, z), y = H(wp.x, wp.z);
   sign(wp.x + wp.nx * 0.2, y + 4.2, wp.z + wp.nz * 0.2, w, 1.6, lines, { bg, fg, rot: wp.rot });
   mesh(boxG(w * 0.8, 3, 0.2), mat(0x7fb3d5, { metalness: 0.3, roughness: 0.2 }), wp.x + wp.nx * 0.12, y + 1.5, wp.z + wp.nz * 0.12).rotation.y = wp.rot;
   return wp;
 }
-function bench(x, z, rot) { const g = new THREE.Group(); mesh(boxG(2.4, 0.15, 0.7), 0x8a5a3b, 0, 0.55, 0, g); mesh(boxG(2.4, 0.6, 0.1), 0x8a5a3b, 0, 0.95, -0.3, g); for (const s of [-1, 1]) mesh(boxG(0.1, 0.55, 0.6), 0x333333, s * 1.05, 0.27, 0, g); g.position.set(x, H(x, z), z); g.rotation.y = rot; scene.add(g); addBoxCollider(x, z, 2.4, 0.7, rot); return g; }
-function umbrellaTable(x, z) { const y = H(x, z); mesh(cylG(0.6, 0.6, 0.08, 10), 0xffffff, x, y + 0.8, z); mesh(cylG(0.05, 0.05, 2.4, 5), 0x555555, x, y + 1.2, z); mesh(new THREE.ConeGeometry(1.6, 0.6, 8), 0xe63946, x, y + 2.5, z); addCircleCollider(x, z, 0.7); }
+export function bench(x, z, rot) { const g = new THREE.Group(); mesh(boxG(2.4, 0.15, 0.7), 0x8a5a3b, 0, 0.55, 0, g); mesh(boxG(2.4, 0.6, 0.1), 0x8a5a3b, 0, 0.95, -0.3, g); for (const s of [-1, 1]) mesh(boxG(0.1, 0.55, 0.6), 0x333333, s * 1.05, 0.27, 0, g); g.position.set(x, H(x, z), z); g.rotation.y = rot; scene.add(g); addBoxCollider(x, z, 2.4, 0.7, rot); return g; }
+export function umbrellaTable(x, z) { const y = H(x, z); mesh(cylG(0.6, 0.6, 0.08, 10), 0xffffff, x, y + 0.8, z); mesh(cylG(0.05, 0.05, 2.4, 5), 0x555555, x, y + 1.2, z); mesh(new THREE.ConeGeometry(1.6, 0.6, 8), 0xe63946, x, y + 2.5, z); addCircleCollider(x, z, 0.7); }
 const flags = []; export const FLAGS = flags;
 function flagTex(kind) {
   return canvasTex(300, 210, (x) => {
@@ -84,7 +84,7 @@ export function flagpole(x, z, kind = 'il', h = 9) {
   for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(g, tm); m.position.z = (i - 1.5) * 20.6; m.castShadow = true; train.add(m); }
   train.position.set(c.x, H(c.x, c.z) + 0.4, c.z); train.rotation.y = rot; scene.add(train);
   const trainCol = addBoxCollider(c.x, c.z, 3.4, 83, rot);
-  LM.train = { g: train, line: rail.line, i: rail.i, t: rail.t, col: trainCol, dir: rail.tx < 0 ? 1 : -1 };
+  LM.train = { g: train, line: rail.line, i: rail.i, t: rail.t, col: trainCol, dir: rail.tx < 0 ? 1 : -1, rot };
   LM.stationSign = at(20.4);
 }
 // green highway sign on Road 85 by the station

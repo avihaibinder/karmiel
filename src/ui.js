@@ -1,4 +1,4 @@
-// UI: Hebrew HUD — dialogs, cards, toasts, WhatsApp feed, objectives, timer, GTA-style radar and full map.
+// UI: Hebrew HUD — dialogs, cards, toasts, Facebook feed, objectives, timer, GTA-style radar and full map.
 import { $, clamp, sleep, FONT } from './core.js';
 import { ROADS, BUILDINGS, AREAS, BOUNDS, PLACES, ROUNDABOUTS, RAILS } from './world.js';
 import { sfx } from './audio.js';
@@ -16,7 +16,7 @@ function feminine(s) {   // exact line first, then any known line embedded in a 
 }
 export const T = s => typeof s !== 'string' ? s : (PLAYER.gender === 'f' ? feminine(s).replace(/ה-נ-כ-ד /g, 'ה-נ-כ-ד-ה ') : s).replace(/יוסי/g, PLAYER.name).replace(/י-ו-ס-י/g, [...PLAYER.name].join('-'));
 
-// ---------------------------------------------------------------- toasts / achievements / WhatsApp
+// ---------------------------------------------------------------- toasts / achievements / the Facebook group
 export function toast(html, cls = '', ms = 4600) {
   const d = document.createElement('div'); d.className = 'toast ' + cls; d.innerHTML = T(html); $('toasts').prepend(d);
   while ($('toasts').children.length > 5) $('toasts').lastChild.remove();
@@ -30,14 +30,23 @@ export function achieve(id, name, desc) {
 }
 const WA_COLORS = ['#25d366', '#34b7f1', '#ff6b6b', '#ffd166', '#b388ff', '#ff9f5a', '#7ee787'];
 const waColor = n => WA_COLORS[[...n].reduce((s, c) => s + c.charCodeAt(0), 0) % WA_COLORS.length];
+// the regulars who comment on everything (shown under some posts)
+const WA_COMMENTS = [['סבתא רבקה', 'אכלת?'], ['בוריס', 'לא.'], ['מנהל הקבוצה', 'לא חשוב. אבל נשאר.'], ['אלון מהבניין ממול', 'מי זה יוסי?'], ['ראש העיר', 'יש עציץ? 🌸'], ['חנה מהקומה השלישית', 'ראיתי מהמרפסת. מאשרת.'], ['אורנה', 'זה כסוף?'], ['נועה', 'עדיין ב-85.'], ['עדי אלדר', 'בזמני לא היו תגובות. היו מכתבים.'], ['ציפי', 'תיקח מספר מאמי']];
 let waTimer = 0;
 export function wa(sender, text) {
   const feed = $('wa'); feed.classList.add('show');
   const d = document.createElement('div'); d.className = 'wa-msg';
   sender = T(sender); text = T(text);
-  d.innerHTML = `<span class="wa-from" style="color:${waColor(sender)}">${sender}</span>${text}<span class="wa-time">${new Date().toTimeString().slice(0, 5)} ✓✓</span>`;
+  const h = [...text].reduce((s, c) => (s * 31 + c.charCodeAt(0)) >>> 0, 7), likes = 1 + h % 40, comments = h % 7;   // "engagement", deterministic per post
+  const emo = ['👍', '👍❤️', '👍😆', '👍❤️😮', '😆', '👍😢'][h % 6], cmt = comments && h % 10 < 4 ? WA_COMMENTS[h % WA_COMMENTS.length] : null;
+  const av = (n, c) => `<div class="wa-av" style="background:${c}">${[...n][0]}</div>`;
+  if (sender === 'מערכת') d.innerHTML = `<div class="wa-sys">${text}</div>`;
+  else d.innerHTML = `<div class="wa-top">${av(sender, waColor(sender))}<div><div class="wa-from">${sender}</div><div class="wa-meta">עכשיו · 🌐</div></div><div class="wa-dots">···</div></div><div>${text}</div>
+    <div class="wa-react"><span>${emo} ${likes}</span><span>${comments === 1 ? 'תגובה אחת' : comments ? comments + ' תגובות' : ''}</span></div>
+    <div class="wa-act"><span>👍 לייק</span><span>💬 תגובה</span><span>↪ שיתוף</span></div>
+    ${cmt ? `<div class="wa-cmt">${av(T(cmt[0]), waColor(cmt[0]))}<div class="bub"><b>${T(cmt[0])}</b>${T(cmt[1])}</div></div>` : ''}`;
   $('wa-list').append(d);
-  while ($('wa-list').children.length > 4) $('wa-list').firstChild.remove();
+  while ($('wa-list').children.length > (innerHeight < 850 ? 2 : 3)) $('wa-list').firstChild.remove();   // posts are tall; keep them clear of the keys bar
   sfx('wa'); clearTimeout(waTimer); waTimer = setTimeout(() => feed.classList.remove('show'), 9000);
 }
 

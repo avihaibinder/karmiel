@@ -23,6 +23,9 @@ const k = c => keys.has(c);
 
 // ---------------------------------------------------------------- state
 export const player = makeHuman({ shirt: 0x2f80c8, pants: 0x34466e, hair: 0x3b2a1e, backpack: true, print: 0xffffff });
+// pivot at the body's centre (not the feet) so the knock-down tumble spins in place instead of sweeping through the ground
+const PIVOT = 1.2;
+{ const inner = new THREE.Group(); inner.position.y = -PIVOT; while (player.g.children.length) inner.add(player.g.children[0]); player.g.add(inner); }
 scene.add(player.g);
 const ponytail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.2), new THREE.MeshStandardMaterial({ color: 0x5a3a1e, flatShading: true }));
 ponytail.position.set(0, 0.28, -0.42); ponytail.rotation.x = 0.75; ponytail.visible = false; player.head.add(ponytail);
@@ -35,7 +38,7 @@ export const P = {
 export const cam = { yaw: Math.PI, pitch: 0.36, dist: 10, manualT: 0, fixed: null };
 export const scooter = { g: makeScooter(), unlocked: false, pos: new THREE.Vector3(), yaw: 0 };
 scooter.g.visible = false; scene.add(scooter.g);
-const CRASH = ['התנגשת בשיח. השיח בסדר. תודה ששאלת.', 'הקורקינט הלך לכיוון אחד, אתה לכיוון השני. כמו רוב מערכות היחסים בכרמיאל.', 'הרכבת את עצמך על עמוד תאורה. העמוד נדלק. הוא שמח שמישהו שם לב אליו.', 'עפת מהקורקינט באמצע כיכר. הקורקינט המשיך להסתובב. הוא מקומי.'];
+const CRASH = ['התנגשת בשיח. השיח בסדר. תודה ששאלת.', 'הקורקינט הלך לכיוון אחד, אתה לכיוון השני. כמו רוב מערכות היחסים בכרמיאל.', 'הרכבת את עצמך על עמוד תאורה. העמוד נדלק. הוא שמח שמישהו שם לב אליו.', 'עפת מהקורקינט באמצע כיכר. הקורקינט המשיך להסתובב. הוא מקומי.', 'נכנסת לכיכר במהירות של תל אביב. יצאת ממנה במהירות של כרמיאל. באוויר. בלי קורקינט.', 'התנגשת בעציץ של ראש העיר. העציץ בסדר. ראש העיר בדרך. הוא לא בסדר.', 'הקורקינט עצר. אתה לא. הוא רשום על שם העירייה. אתה רשום על שם סבתא. היא כבר יודעת.', 'התנגשת בבובה? לא, זה עמוד. היא הסתכלה עליך כמו בובה. אל תסתכל בחזרה.'];
 
 export function teleport(x, z, yaw = P.yaw) {
   P.pos.set(x, P.ground(x, z), z); P.vel.set(0, 0, 0); P.yaw = yaw; P.knock = 0;
@@ -92,9 +95,12 @@ export function updatePlayer(dt) {
 // visual sync (animation, scooter, knock spin)
 export function syncPlayer(hs, t, dt) {
   const g = player.g;
-  g.position.copy(P.pos); g.rotation.set(0, P.yaw, 0);
+  g.position.copy(P.pos); g.position.y += PIVOT; g.rotation.set(0, P.yaw, 0);
   if (P.dancing) { g.position.y += danceHuman(player, P.beat, 0.3) + P.hop * 0.4; P.hop = Math.max(0, P.hop - dt * 5); g.rotation.y = Math.sin(P.beat * Math.PI / 2) * 0.5; }
-  else if (P.knock > 0) { g.rotation.z = Math.sin(t * 20) * 0.8; g.rotation.x = t * 12; }
+  else if (P.knock > 0) {
+    if (P.onGround) { g.position.y = P.pos.y + 0.35; g.rotation.x = Math.PI / 2; g.rotation.z = Math.sin(t * 6) * 0.08; animateHuman(player, 0, t); }   // sprawled on the asphalt until he gets up
+    else { g.rotation.z = Math.sin(t * 20) * 0.8; g.rotation.x = t * 12; }                                                                         // tumbling through the air
+  }
   else if (P.onScooter) { animateHuman(player, 0, t); player.legL.rotation.x = 0.25; player.armL.rotation.x = player.armR.rotation.x = -1.1; g.position.y += 0.35; g.rotation.z = clamp(-P.speed * 0.004 * ((keys.has('KeyD') || keys.has('ArrowRight')) - (keys.has('KeyA') || keys.has('ArrowLeft'))), -0.25, 0.25); }
   else if (!P.onGround) { animateHuman(player, 0, t); player.legL.rotation.x = 0.6; player.legR.rotation.x = -0.3; player.armL.rotation.z = -0.6; player.armR.rotation.z = 0.6; }
   else animateHuman(player, hs, t);

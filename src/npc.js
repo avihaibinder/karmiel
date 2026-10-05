@@ -47,7 +47,7 @@ export function updateNPCs(dt, t, P) {
     const far = d > 320; g.visible = !far; if (far && !n.follow && !n.path) continue;
     n.tag.visible = d < 45; n.mark.visible = !n.talking && n.news(); if (n.mark.visible) n.mark.position.y = n.tag.position.y + 0.8 + Math.sin(t * 4) * 0.12;
     if (n.say) { n.sayT -= dt; if (n.sayT <= 0) { g.remove(n.say); n.say = null; } }
-    if (n.talking) { animateHuman(n.h, 0, t); continue; }
+    if (n.talking && !n.dance) { animateHuman(n.h, 0, t); continue; }   // Galit is "talking" for the whole festival mission — let her dance anyway
     let moving = false;
     if (n.follow) {
       const f = n.follow, dx = f.x - p.x, dz = f.z - p.z, dd = Math.hypot(dx, dz);

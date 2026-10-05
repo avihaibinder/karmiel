@@ -14,7 +14,7 @@ for (let i = 0; i < 60; i++) { const bus = Math.random() < 0.06; cars.push({ m: 
 
 function allowed(r, i) { const d = []; if (i < r.pts.length - 1 && r.oneway !== -1) d.push(1); if (i > 0 && r.oneway !== 1) d.push(-1); return d; }
 function spawn(c, px, pz, near = 140, far = 520) {
-  const pool = traffic.boost && Math.random() < 0.6 ? traffic.boost.roads : DRIVE;
+  const pool = traffic.boost?.roads.length && Math.random() < 0.6 ? traffic.boost.roads : DRIVE;
   for (let tries = 0; tries < 40; tries++) {
     const { r } = pick(pool), i = Math.floor(Math.random() * r.pts.length), [x, z] = r.pts[i], d = Math.hypot(x - px, z - pz);
     const lim = traffic.boost && pool === traffic.boost.roads ? [20, 400] : [near, far];
@@ -59,11 +59,9 @@ export function updateTraffic(dt, player) {
     c.x = a[0] + (b[0] - a[0]) * c.t - hz * off; c.z = a[1] + (b[1] - a[1]) * c.t + hx * off;
     c.yaw = lerpAngle(c.yaw, Math.atan2(-hz, hx), clamp(dt * 8, 0, 1)); c.hx = Math.cos(c.yaw); c.hz = -Math.sin(c.yaw);
     c.m.position.set(c.x, H(c.x, c.z) + 0.42, c.z); c.m.rotation.y = c.yaw;
-    // pedestrian collision — nobody brakes
-    if (!player.onScooter || true) {
-      const dx = px - c.x, dz = pz - c.z, along = dx * c.hx + dz * c.hz, side = -dx * c.hz + dz * c.hx;
-      if (Math.abs(along) < (c.bus ? 5.8 : 2.4) && Math.abs(side) < (c.bus ? 1.6 : 1.3) && player.pos.y < c.m.position.y + 3 && traffic.onHit) traffic.onHit(c, side);
-    }
+    // pedestrian (and scooter) collision — nobody brakes
+    const dx = px - c.x, dz = pz - c.z, along = dx * c.hx + dz * c.hz, side = -dx * c.hz + dz * c.hx;
+    if (Math.abs(along) < (c.bus ? 5.8 : 2.4) && Math.abs(side) < (c.bus ? 1.6 : 1.3) && player.pos.y < c.m.position.y + 3 && traffic.onHit) traffic.onHit(c, side);
   }
 }
 // concentrate traffic on specific roads (Road 85 crossing mission)
