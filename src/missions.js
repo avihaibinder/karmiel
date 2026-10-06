@@ -1,12 +1,12 @@
 // Story & missions — "כרמיאל: הדרך החוצה". Design: story_design.md (Prologue, Acts 1–3, finale, endings).
-import { THREE, scene, camera, mesh, boxG, cylG, mat, label, textTex, pick, sleep, clamp, FONT } from './core.js';
+import { THREE, $, scene, camera, mesh, boxG, cylG, mat, label, textTex, pick, sleep, clamp, FONT } from './core.js';
 import { H, POI, ROUNDABOUTS, CHETS, groundAt, addBoxCollider, BOUNDS, free } from './world.js';
 import { LM, nearestRoad } from './landmarks.js';
 import { makeHuman, makeCat, makeScooter, animateHuman } from './characters.js';
-import { P, cam, teleport, placeScooter, scooter, keys, pressed, knock, setPlayerGender } from './player.js';
+import { P, cam, teleport, placeScooter, scooter, keys, pressed, knock, setPlayerGender, dismount, player } from './player.js';
 import { npcs, npc, addNPC, placeNPC, hideNPC, bark, addCone, removeCone, sees } from './npc.js';
 import { traffic, boostTraffic } from './traffic.js';
-import { UI, PLAYER, T, say, ask, lines, card, cards, hideCard, toast, wa, achieve, setObjective, startTimer, stopTimer, setCounter, fade, setBlip, removeBlip, pa } from './ui.js';
+import { UI, PLAYER, T, say, ask, lines, card, cards, hideCard, toast, wa, achieve, achievements, setObjective, startTimer, stopTimer, setCounter, fade, setBlip, removeBlip, pa } from './ui.js';
 import { sfx, music } from './audio.js';
 import { rhythm, quiz } from './minigames.js';
 import { enterMall, nearNest, takeStamp, horror } from './horror.js';
@@ -55,17 +55,21 @@ const clearItems = () => { for (const it of M.items) scene.remove(it.g); M.items
 async function runMission(id, fn, onFail) {
   if (G.active) { toast('🚧 אתה באמצע משימה. בכרמיאל עושים דבר אחד בכל פעם. (חוץ מסבתא. היא עושה הכול.)', 'bad'); return; }
   G.active = id; UI.busy = false;
+  let crashed = false;
   for (;;) {
     token = { failed: false };
     try { await fn(); break; }
     catch (e) {
-      if (!e.fail) throw e;
+      if (!e.fail) {   // a real bug: report it and release the player instead of soft-locking the game with G.active stuck
+        crashed = true; console.error(`mission ${id} crashed`, e); P.frozen = false; UI.dState = null; $('dialog').classList.remove('show');
+        toast(`⚠️ המשימה נשברה (${e.message}). חוזרים לרחוב. העירייה מתנצלת. לא באמת.`, 'bad', 9000); break;
+      }
       stopTimer(); P.frozen = true; sfx('fail'); M.targets = [];
       await card(`<div class="fail">😵</div>${e.message}<br><small>לחץ כדי לנסות שוב</small>`); hideCard(); P.frozen = false;
       await onFail?.();
     }
   }
-  G.active = null; G.done.add(id); stopTimer(); M.targets = []; setObjective(null); save(); refreshBlips(); music('roam');
+  G.active = null; if (!crashed) G.done.add(id); stopTimer(); M.targets = []; setObjective(null); save(); refreshBlips(); music('roam');
 }
 
 // =====================================================================
@@ -357,7 +361,7 @@ async function busRide() {
   fade(true); await sleep(700);
   await card(`🚌 ...<br>${7 + Math.floor(Math.random() * 20)} כיכרות. 3 פעמים כיכר האבן. שלמה סיפר לך על הגרוש שלו. פעמיים.`); hideCard();
   if (Math.random() < 1 / 6) { fade(false); return say(N('shlomo'), '(עוצר בדיוק איפה שעלית) הגענו! ...לא לשם. לפה. קו 1 מגיע לכל מקום, לא אמרתי שבסדר מסוים.'); }
-  const t = D[c][1]; teleport(t.x + 3, t.z + 3); if (P.onScooter) { const { dismount } = await import('./player.js'); dismount(); } fade(false);
+  const t = D[c][1]; teleport(t.x + 3, t.z + 3); if (P.onScooter) dismount(); fade(false);
   toast('🚌 הגענו! תרד מהדלת האחורית. הקדמית שמורה לכיכרות.', 'good');
 }
 function setupGivers() {
@@ -761,7 +765,7 @@ async function M7() {
     await lines([[N('moti'), 'קח פנס. קיבלתי מתנה מהבנק ב-98\'. הבנק סגר. הפנס עוד עובד. זה אומר משהו על העולם.'], [N('moti'), 'שלושה חוקים: אחד, לא מסתכלים לבובות בגב. שתיים, אם הרמקול מדבר – לא עונים. שלוש, לא הולכים לבאולינג.'], ['יוסי', 'החתולה בבאולינג, נכון?'], [N('moti'), '...תביא לי משהו מהבאולינג. יש לי שם נעליים מ-94\'. מידה 43. בלי לחץ.']]);
     setObjective('הקומה הנשכחת', [[false, 'להיכנס לקניון הישן']]);
     await goTo(LM.kikar.entrance, 3.5);
-    if (P.onScooter) { const { dismount } = await import('./player.js'); dismount(); }
+    if (P.onScooter) dismount();
     await cards(['שלט על הדלת: "מבנה מסוכן. הכניסה אסורה."<br>מתחת, בטוש: "חוץ מחתולים".', '<small>זה משחק. בחיים האמיתיים: מבנה מסוכן = לא נכנסים.<br>גם לא בשביל חתול. גם לא בשביל חותמת.</small>']);
     fade(true); await sleep(700); traffic.enabled = false;
     const done = enterMall();
@@ -838,7 +842,7 @@ async function M8() {
       return near(LM.gate, 6)();
     });
     stopTimer(); for (const b of blocks) clearBlock(b);
-    if (P.onScooter) { const { dismount } = await import('./player.js'); dismount(); }
+    if (P.onScooter) dismount();
     await lines([[N('itzik'), 'טופס 17-כ. חתום. עם חותמת... (מריח) של חתולה. ...תקין. עבור.'], [N('itzik'), '(בשקט) אני לא האמנתי שתביא אותו. תשמע, תחזור לבקר. מאז שאתה פה – יש לי על מה לדבר עם אמא שלי.']]);
     await cards(['על הרציף: כולם.<br>דודו עם בגט. גלית עם הרקדניות. פרופ\' שמשון עם מטפחת. בוריס עם לוח שחמט. מוטי עם נעליים.', 'וסבתא.<br>עם עגלה. עם קופסה. עומדת בדיוק מול דלת הקרון.']);
     show('savta', LM.platform);
@@ -860,7 +864,7 @@ function freePlay() {
 // =====================================================================
 export const cutscene = { train: null };
 async function ending() {
-  G.stage = 'ending'; P.frozen = true; const pl = (await import('./player.js')).player; pl.g.visible = false;
+  G.stage = 'ending'; P.frozen = true; const pl = player; pl.g.visible = false;
   // the train leaves along the real rails toward Haifa
   const T = LM.train, line = T.line; let i = T.i, t = T.t, v = 0, time = 0;
   traffic.enabled = true; music('sad');
@@ -902,7 +906,7 @@ async function ending() {
   await ending2(true);
 }
 async function ending2(trueEnd) {
-  const pl = (await import('./player.js')).player;
+  const pl = player;
   if (trueEnd) {
     await card('<h1>כרמיאל: הדרך פנימה.</h1>כי מכל כיכר אפשר לצאת.<br>אבל כולן מובילות הביתה.', { big: true }); hideCard();
     achieve('home', 'הדרך פנימה', 'חזרת הביתה. העיר חנכה כיכר לכבודך. שוב.');
@@ -920,7 +924,7 @@ async function ending2(trueEnd) {
 async function credits() {
   const secs = Math.round((performance.now() - G.t0) / 1000);
   const lines = ['עיצוב כיכרות: עיריית כרמיאל (בלי ידיעתה)', 'קבוצת פייסבוק: 214 חברים, 3 פעילים, סבתא אחת', 'תזונה: סבתא רבקה', 'פסיכולוגיה של בובות: אופנת כיכר 92', 'יועץ חניה: אורנה (עדיין מחפשת)', 'יועץ שחמט ותפיסת עולם: בוריס', 'חתולה: מיצי (לא חתמה על חוזה. גנבה את העט.)', 'אף עגבנייה לא נפגעה בהפקת המשחק. בוריס מבקש לציין שאחת נגנבה.', 'תודה מיוחדת: השניצליה, על הבגט שהחזיק את הצוות בחיים.', 'תודה לאמפי פארק הגליל, לפסטיבל, ולכל מי שרקד פעם ברגל הלא נכונה.', 'כל הדמויות, השמות והאירועים במשחק בדיוניים. כל דמיון למציאות מקרי בלבד. הכיכרות – אמיתיות מדי.', 'מפה: OpenStreetMap · גבהים: SRTM', 'זמן הגעה משוער לסוף הקרדיטים: שעה ו-45.'];
-  await card(`<div class="credits"><h1>כרמיאל: הדרך החוצה</h1>${lines.map(l => `<p>${l}</p>`).join('')}<div class="stats">⏱ ${Math.floor(secs / 60)} דק' ${secs % 60} שנ' · 🚗 נדרסת ${G.hits} פעמים · 🏆 ${Object.keys((await import('./ui.js')).achievements).length} הישגים</div><h2>כיכרות: ${G.rb}/180</h2><small>ראש העיר מבקש לעדכן את השלט.</small></div>`, { big: true });
+  await card(`<div class="credits"><h1>כרמיאל: הדרך החוצה</h1>${lines.map(l => `<p>${l}</p>`).join('')}<div class="stats">⏱ ${Math.floor(secs / 60)} דק' ${secs % 60} שנ' · 🚗 נדרסת ${G.hits} פעמים · 🏆 ${Object.keys(achievements).length} הישגים</div><h2>כיכרות: ${G.rb}/180</h2><small>ראש העיר מבקש לעדכן את השלט.</small></div>`, { big: true });
   await card('🌙 מוטי סוגר את הדוכן בלילה.<br>הוא תולה את התחפושת הריקה של כיכרון על וו.<br>האורות כבים.<br><br>התחפושת מנופפת.<br><br><b>"הקניון תמיד פתוח. בשבילך."</b>');
   hideCard();
 }

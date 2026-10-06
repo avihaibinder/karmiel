@@ -113,7 +113,7 @@ const platforms = [];
 export function addPlatform(pts, top) { platforms.push({ pts, top, x0: Math.min(...pts.map(p => p[0])), x1: Math.max(...pts.map(p => p[0])), z0: Math.min(...pts.map(p => p[1])), z1: Math.max(...pts.map(p => p[1])) }); }
 export const groundExtra = [];   // functions (x, z) -> height | -Infinity
 export function groundAt(x, z) {
-  let h = H(x, z);
+  let h = H(x, z) + roadLift(x, z);   // roads are ribbons floating above the terrain — stand on the asphalt, not 40 cm under it
   for (const p of platforms) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && pointInPoly(x, z, p.pts)) h = Math.max(h, p.top);
   for (const f of groundExtra) h = Math.max(h, f(x, z));
   return h;
@@ -364,6 +364,18 @@ function offsetLine(pts, d) {
     m.receiveShadow = true; scene.add(m);
   }
 }
+
+// road surface height above the terrain, painted into a map (sidewalks, rail ballast, then roads by rising height so the highest ribbon wins at junctions)
+const roadOff = (() => {
+  const c = document.createElement('canvas'); c.width = GW; c.height = GH; const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = '#000'; x.fillRect(0, 0, GW, GH); x.lineCap = 'round'; x.lineJoin = 'round';
+  const stroke = (pts, w, lift) => { const v = Math.round(lift * 255); x.strokeStyle = `rgb(${v},${v},${v})`; x.lineWidth = w * GS; x.beginPath(); pts.forEach(([px, pz], i) => i ? x.lineTo(gx(px), gz(pz)) : x.moveTo(gx(px), gz(pz))); x.stroke(); };
+  for (const r of ROADS) if (r.cls <= 4 && r.cls >= 1 && !r.rb) stroke(r.pts, r.w + 4.4, 0.2);
+  for (const r of RAILS) stroke(r, 4.4, 0.25);
+  for (const cls of [6, 5, 4, 3, 2, 1, 0]) for (const r of ROADS) if (r.cls === cls) stroke(r.pts, r.w, YOFF[cls]);
+  const d = x.getImageData(0, 0, GW, GH).data, out = new Uint8Array(GW * GH); for (let i = 0; i < out.length; i++) out[i] = d[i * 4]; return out;   // keep one channel (10 MB, not 40)
+})();
+export const roadLift = (x, z) => { const i = Math.round(gx(x)), j = Math.round(gz(z)); return i >= 0 && j >= 0 && i < GW && j < GH ? roadOff[j * GW + i] / 255 : 0; };
 
 // =====================================================================
 // terrain mesh

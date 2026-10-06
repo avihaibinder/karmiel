@@ -1,7 +1,7 @@
 // מדרחוב כרמיאל (sderot KKL pedestrian mall, where HaSchnitzelia is): paving, trees, benches, string lights —
 // and a war of far too many pizzerias with far too many opinions.
 import { THREE, scene, mat, mesh, boxG, cylG, canvasTex, sign, pick } from './core.js';
-import { H, addTree, addInst } from './world.js';
+import { H, addTree, addInst, groundExtra } from './world.js';
 import { LM, storefront, bench, umbrellaTable, nearestBuilding, wallPoint } from './landmarks.js';
 import { addNPC, bark, npc } from './npc.js';
 import { say, toast, wa, achieve } from './ui.js';
@@ -13,6 +13,8 @@ const A = geo(32.90862, 35.29282), B = geo(32.91030, 35.29282);
 const LEN = Math.hypot(B.x - A.x, B.z - A.z), DX = (B.x - A.x) / LEN, DZ = (B.z - A.z) / LEN, NX = -DZ, NZ = DX;
 const at = (t, side = 0) => ({ x: A.x + DX * t * LEN + NX * side, z: A.z + DZ * t * LEN + NZ * side });
 export const MIDRACHOV = { center: at(0.5), len: LEN };
+// the paving below is laid 0.5 above the terrain — walk on it, not in it
+groundExtra.push((x, z) => { const t = ((x - A.x) * DX + (z - A.z) * DZ) / LEN, s = (x - A.x) * NX + (z - A.z) * NZ; return t > 0 && t < 1 && Math.abs(s) < 11 ? H(x, z) + 0.5 : -Infinity; });
 
 // ---------------------------------------------------------------- paving (warm stone tiles with a red-brick band)
 {
